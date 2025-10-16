@@ -1,5 +1,5 @@
 # OBS Remote over Tailnet — Starter Kit
-Control OBS from any device on your private tailnet (Tailscale/WireGuard). Quick to deploy, safe by default, and Gumroad‑ready.
+Control OBS from any device on your private tailnet (Tailscale/WireGuard). 
 
 ## Features
 - Start/Stop Stream & Recording
