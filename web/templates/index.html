@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OBS Remote</title>
+  <link rel="stylesheet" href="/static/app.css" />
+  <style>.right{float:right}</style>
+</head>
+<body>
+  <h1>OBS Remote <button class="right" onclick="logout()">Logout</button></h1>
+  {% if safe_mode %}<div class="badge">SAFE MODE — streaming disabled</div>{% endif %}
+  <pre id="state"></pre>
+  <div class="row">
+    <button onclick="post('/api/record/start')">Start Rec</button>
+    <button onclick="post('/api/record/stop')">Stop Rec</button>
+    <button onclick="post('/api/stream/start')" id="goLiveBtn">Go Live</button>
+    <button onclick="post('/api/stream/stop')">End Live</button>
+  </div>
+
+  <h3>Scenes</h3>
+  <div id="scenes"></div>
+  <div style="margin-top:8px;">
+    <button onclick="loadSceneItems()">Load Selected Scene Items</button>
+    <select id="sceneSelect"></select>
+  </div>
+  <pre id="items"></pre>
+
+  <h3>Inputs</h3>
+  <pre id="inputs"></pre>
+
+  <h3>Set Text</h3>
+  <input id="textSource" placeholder="Text source name">
+  <input id="textVal" placeholder="Your text">
+  <button onclick="setText()">Apply</button>
+
+<script>
+function token(){
+  const t = localStorage.getItem('obs_token') || new URLSearchParams(location.search).get('token') || '';
+  if (t && !localStorage.getItem('obs_token')) {
+    localStorage.setItem('obs_token', t);
+    const url = new URL(location.href); url.searchParams.delete('token'); history.replaceState({}, '', url);
+  }
+  return localStorage.getItem('obs_token') || '';
+}
+function ensureAuth(){ if(!token()) location.replace('/login'); }
+function logout(){ localStorage.removeItem('obs_token'); location.replace('/login'); }
+
+function post(path, body) {
+  return fetch(path, {method:'POST', headers:{'Content-Type':'application/json','X-Auth-Token':token()}, body: JSON.stringify(body||{})})
+    .then(r=>{ if(!r.ok){ if(r.status===401) return location.replace('/login'); throw new Error('HTTP '+r.status);} return r.json(); })
+    .then(()=>refresh()).catch(e=>alert(e));
+}
+function setScene(name){ post('/api/scene',{name}); }
+function setText(){ post('/api/text',{source:document.getElementById('textSource').value, text:document.getElementById('textVal').value}); }
+
+function refresh(){
+  fetch('/api/state', {headers:{'X-Auth-Token':token()}})
+    .then(r=>{ if(r.status===401){ location.replace('/login'); return; } return r.json(); })
+    .then(s=>{ if(!s) return; document.getElementById('state').textContent = JSON.stringify(s, null, 2);
+      document.getElementById('goLiveBtn').disabled = {{ 'true' if safe_mode else 'false' }};
+    });
+
+  fetch('/api/scenes', {headers:{'X-Auth-Token':token()}})
+    .then(r=>r.json()).then(res=>{
+      const list = res.scenes||[]; const current = res.current;
+      const wrap = document.getElementById('scenes'); wrap.innerHTML='';
+      const sel = document.getElementById('sceneSelect'); sel.innerHTML='';
+      list.forEach(name=>{
+        const b=document.createElement('button'); b.textContent=name + (name===current?' (current)':''); b.onclick=()=>setScene(name); wrap.appendChild(b);
+        const opt=document.createElement('option'); opt.value=name; opt.textContent=name; sel.appendChild(opt);
+      });
+    });
+
+  fetch('/api/inputs', {headers:{'X-Auth-Token':token()}})
+    .then(r=>r.json()).then(res=>{
+      document.getElementById('inputs').textContent = JSON.stringify(res.inputs||[], null, 2);
+    });
+}
+
+function loadSceneItems(){
+  const scene = document.getElementById('sceneSelect').value;
+  if(!scene) return;
+  fetch('/api/scene/items?scene='+encodeURIComponent(scene), {headers:{'X-Auth-Token':token()}})
+    .then(r=>r.json()).then(res=>{
+      document.getElementById('items').textContent = JSON.stringify(res.items||[], null, 2);
+    });
+}
+
+ensureAuth();
+refresh();
+</script>
+</body>
+</html>

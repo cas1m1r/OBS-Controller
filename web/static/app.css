@@ -1,0 +1,7 @@
+body { font-family: system-ui, sans-serif; padding: 16px; }
+.row button { margin-right: 8px; margin-bottom: 8px; }
+.badge { display:inline-block; background:#ffd25e; padding:6px 10px; border-radius:8px; margin-bottom:10px; }
+button { padding:8px 12px; border-radius:10px; border:1px solid #ddd; }
+button:disabled { opacity: .5; }
+input { padding:8px; margin-right:6px; max-width: 360px; width: 100%; }
+.hint { color:#666; font-size: 0.9em; }

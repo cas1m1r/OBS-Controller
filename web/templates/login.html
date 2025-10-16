@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login — OBS Remote</title>
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <h1>Login</h1>
+  <p>Enter your role token to access the dashboard.</p>
+  <input id="token" placeholder="admin-xxxxxxxx or producer-yyyyyyyy">
+  <button onclick="save()">Continue</button>
+  <p class="hint">Tip: ask your admin for your token. Tokens live in the server `.env`.</p>
+<script>
+function save(){
+  const t = document.getElementById('token').value.trim();
+  if(!t) return alert('Enter a token');
+  fetch('/api/whoami', {headers:{'X-Auth-Token':t}}).then(r=>{
+    if(r.ok){ localStorage.setItem('obs_token', t); location.replace('/'); }
+    else alert('Invalid token');
+  }).catch(()=>alert('Network error'));
+}
+</script>
+</body>
+</html>
